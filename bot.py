@@ -1,55 +1,51 @@
 import os
 import smtplib
 import random
+import time
 import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# --- الإعدادات العلوية ---
+# الإعدادات
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 MY_EMAIL = "oedn305@gmail.com"
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-# إعداد نموذج Gemini 2.0 Flash الجديد
-genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash') 
-
 def run_bot():
-    try:
-        # اختيار موضوع ترند 2026
-        topic = random.choice([
-            "مستقبل العملات الرقمية في 2026",
-            "أحدث تقنيات الذكاء الاصطناعي 2.0",
-            "تطورات مدينة نيوم والمشاريع السعودية",
-            "Future of AI and Robotics 2026"
-        ])
-        
-        print(f"🚀 البدء في توليد مقال عبر Gemini 2.0 عن: {topic}")
-        
-        # طلب المحتوى بتنسيق HTML احترافي
-        prompt = f"Write a professional HTML blog post about {topic} in Arabic and English. Use <h2> and <b> tags."
-        response = model.generate_content(prompt)
-        
-        # تجهيز رسالة الإيميل لنظام النشر التلقائي (trand2)
-        msg = MIMEMultipart()
-        msg['Subject'] = f"حصري ترند 2026: {topic}"
-        msg['From'] = MY_EMAIL
-        msg['To'] = BLOGGER_EMAIL
-        msg.attach(MIMEText(response.text, 'html'))
+    genai.configure(api_key=GEMINI_KEY)
+    model = genai.GenerativeModel('gemini-2.0-flash')
 
-        # الاتصال بسيرفر Gmail والإرسال
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(MY_EMAIL, EMAIL_PASS)
-            server.send_message(msg)
+    topic = random.choice(["Crypto 2026", "AI Trends", "Future Tech"])
+    
+    # محاولة التوليد مع خاصية الانتظار الذكي
+    for attempt in range(3): # سيحاول 3 مرات قبل أن يستسلم
+        try:
+            print(f"🚀 محاولة رقم {attempt + 1}: توليد مقال عن {topic}...")
+            response = model.generate_content(f"Write a professional blog post about {topic} in Arabic and English with HTML tags.")
             
-        print(f"✅ تم النشر بنجاح في بلوجر باستخدام Gemini 2.0!")
+            # إذا نجح التوليد، ننتقل للإرسال
+            msg = MIMEMultipart()
+            msg['Subject'] = f"Trand2 Update: {topic}"
+            msg['From'] = MY_EMAIL
+            msg['To'] = BLOGGER_EMAIL
+            msg.attach(MIMEText(response.text, 'html'))
 
-    except Exception as e:
-        print(f"❌ حدث خطأ: {e}")
-        if "429" in str(e):
-            print("💡 تنبيه: الحساب وصل للحد الأقصى (Quota)، انتظر قليلاً أو غير المفتاح.")
+            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                server.starttls()
+                server.login(MY_EMAIL, EMAIL_PASS)
+                server.send_message(msg)
+            
+            print("✅ مبروك! نجحت العملية وتم النشر.")
+            return # إنهاء البرنامج بنجاح
+
+        except Exception as e:
+            if "429" in str(e):
+                print(f"⚠️ زحام في السيرفر (429). سأنتظر 60 ثانية ثم أحاول مجدداً...")
+                time.sleep(60) # انتظر دقيقة كاملة ليرتاح السيرفر
+            else:
+                print(f"❌ خطأ غير متوقع: {e}")
+                break
 
 if __name__ == "__main__":
     run_bot()

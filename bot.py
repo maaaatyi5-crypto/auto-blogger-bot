@@ -1,6 +1,5 @@
 import os
 import smtplib
-import random
 import time
 import google.generativeai as genai
 from email.mime.text import MIMEText
@@ -14,19 +13,18 @@ BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
 def run_bot():
     genai.configure(api_key=GEMINI_KEY)
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    # استخدام موديل أقدم قليلاً لتجاوز زحام الموديل الجديد
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
-    topic = random.choice(["Crypto 2026", "AI Trends", "Future Tech"])
+    print(f"🚀 محاولة طوارئ لتجاوز حظر 429...")
     
-    # محاولة التوليد مع خاصية الانتظار الذكي
-    for attempt in range(3): # سيحاول 3 مرات قبل أن يستسلم
+    for attempt in range(2):
         try:
-            print(f"🚀 محاولة رقم {attempt + 1}: توليد مقال عن {topic}...")
-            response = model.generate_content(f"Write a professional blog post about {topic} in Arabic and English with HTML tags.")
+            # طلب مقال قصير جداً لضمان المرور من السيرفر
+            response = model.generate_content("Write a 100-word blog about Tech 2026 in Arabic and English HTML.")
             
-            # إذا نجح التوليد، ننتقل للإرسال
             msg = MIMEMultipart()
-            msg['Subject'] = f"Trand2 Update: {topic}"
+            msg['Subject'] = "Trand2 Emergency Post"
             msg['From'] = MY_EMAIL
             msg['To'] = BLOGGER_EMAIL
             msg.attach(MIMEText(response.text, 'html'))
@@ -36,16 +34,12 @@ def run_bot():
                 server.login(MY_EMAIL, EMAIL_PASS)
                 server.send_message(msg)
             
-            print("✅ مبروك! نجحت العملية وتم النشر.")
-            return # إنهاء البرنامج بنجاح
+            print("✅ أخييييراً! نجحت العملية.")
+            return
 
         except Exception as e:
-            if "429" in str(e):
-                print(f"⚠️ زحام في السيرفر (429). سأنتظر 60 ثانية ثم أحاول مجدداً...")
-                time.sleep(60) # انتظر دقيقة كاملة ليرتاح السيرفر
-            else:
-                print(f"❌ خطأ غير متوقع: {e}")
-                break
+            print(f"⚠️ المحاولة {attempt+1} فشلت: {e}")
+            time.sleep(120) # انتظر دقيقتين كاملتين بين المحاولات
 
 if __name__ == "__main__":
     run_bot()

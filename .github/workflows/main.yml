@@ -1,0 +1,37 @@
+name: Crypto_Trand2_Automation
+
+# تحديد متى يعمل البوت
+on:
+  workflow_dispatch: # يتيح لك تشغيل البوت يدوياً بضغطة زر
+  schedule:
+    - cron: '0 */6 * * *' # يعمل تلقائياً كل 6 ساعات (بتوقيت العالمي)
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. سحب الكود من المستودع
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. تجهيز بيئة بايثون
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3. تثبيت المكتبات المطلوبة (مثل google-generativeai)
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. تشغيل البوت الفعلي وتمرير الأسرار (Secrets) له
+      - name: Run Trand2 Bot
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+          MY_EMAIL: "oedn305@gmail.com"
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}
+        run: python bot.py

@@ -1,52 +1,43 @@
 import os
-import time
+import smtplib
 import random
 import google.generativeai as genai
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-# جلب المفتاح من GitHub Secrets
+# الإعدادات
 GEMINI_KEY = os.getenv("GEMINI_KEY")
+MY_EMAIL = "oedn305@gmail.com"
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-if not GEMINI_KEY:
-    print("❌ Error: GEMINI_KEY is missing!")
-    exit(1)
-
-# إعداد الجيمني 2.0 فلاش
 genai.configure(api_key=GEMINI_KEY)
+# استخدم نسخة flash لأنها أسرع وأقل استهلاكاً للكوتا
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-def generate_article():
-    # كلمات بحث ترند لعام 2026
-    keywords = [
-        "أحدث تقنيات الذكاء الاصطناعي 2026",
-        "Future of AI and Green Energy",
-        "مستقبل الهيدروجين الأخضر في السعودية",
-        "Top Tech Trends 2026"
-    ]
-    topic = random.choice(keywords)
-    print(f"🚀 البدء في توليد موضوع: {topic}")
-
-    prompt = (
-        f"Write a professional SEO article about {topic}.\n"
-        "Instructions:\n"
-        "1. Arabic section first (dir='rtl') with h1 and h2 tags.\n"
-        "2. Then English section (dir='ltr') with professional translation.\n"
-        "3. Use HTML format and include emojis."
-    )
-
+def run_bot():
+    topic = random.choice(["AI Trends 2026", "Crypto Future", "NEOM Tech"])
+    print(f"🚀 محاولة توليد مقال عن: {topic}")
+    
     try:
-        # تأخير بسيط لتجنب الزحام في البداية
-        time.sleep(10) 
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"❌ حدث خطأ: {e}")
-        return None
+        # تقليل طول الطلب لتوفير الكوتا
+        response = model.generate_content(f"Write a short HTML blog post about {topic} in Arabic and English.")
+        
+        # إعداد الإيميل
+        msg = MIMEMultipart()
+        msg['Subject'] = f"New Trend: {topic}"
+        msg['From'] = MY_EMAIL
+        msg['To'] = BLOGGER_EMAIL
+        msg.attach(MIMEText(response.text, 'html'))
 
-# تنفيذ الكود
-content = generate_article()
-if content:
-    print("✅ تم توليد المقال بنجاح!")
-    print(content[:500]) # طباعة جزء للتأكد من النتائج
-else:
-    print("❌ فشل في التوليد.")
-    exit(1)
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(MY_EMAIL, EMAIL_PASS)
+            server.send_message(msg)
+        print("✅ تم النشر!")
+
+    except Exception as e:
+        print(f"❌ خطأ: {e}")
+
+if __name__ == "__main__":
+    run_bot()
